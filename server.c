@@ -117,7 +117,7 @@ void server(struct ItemInfo *items)
 
 void customer(mqd_t msgid, char processID, int *ordersLeft, int *ordersToPick)
 {
-    char nums[MAX_BUFFER_SIZE];
+    int nums[101];
     int temp;
 
     do{
@@ -127,19 +127,23 @@ void customer(mqd_t msgid, char processID, int *ordersLeft, int *ordersToPick)
 
     nums[0] = (char)temp;
 
-    fflush(stdout);
-    printf("\n\n%d\n\n", atoi(nums));
+    }while(nums[0] > *ordersLeft || nums[0] < 0);
 
-    }while(atoi(&nums[0]) > *ordersLeft || atoi(&nums[0]) < 0);
-
-    for(int i = 1; i < atoi(nums[0]) + 1; i++)
+    for(int i = 1; i < nums[0] + 1; i++)
     {
-        nums[i] = (char)getRandomOrder(ordersLeft, ordersToPick);
+        nums[i] = getRandomOrder(ordersLeft, ordersToPick);
     }
     
-    int senderID = processID;
+    unsigned int senderID = processID;
+    char test[101];
 
-    if(mq_send(msgid, nums, MAX_BUFFER_SIZE, senderID) == -1)
+    for(int i = 1; i < nums[0] + 1; i++)
+    {
+        test[i] = nums[i];
+        printf("%c", test[i]);
+    }
+
+    if(mq_send(msgid, test, strlen(test) + 1, 0) == -1)
     {
         perror("msgsnd");
         exit(1);
@@ -188,7 +192,6 @@ void helper(mqd_t msgid, struct ItemInfo *itemList, char *order, int numberOfPro
         selections = getMessage(msgid, order[i]);
 
         fileName[14] = order[i];
-        printf("\n\n%s\n\n", fileName);
 
         FILE *ptr;
 
@@ -221,31 +224,31 @@ void helper(mqd_t msgid, struct ItemInfo *itemList, char *order, int numberOfPro
         fclose(ptr);
     }
 
-    if(msgctl(msgid, IPC_RMID, NULL) == -1) //destroy mailbox
-    {
-        perror("msgctl");
-    }
+
     exit(0);
 }
 
 int* getMessage(mqd_t msgid, char sender)
 {
-    char in[MAX_BUFFER_SIZE];
+    char in[101];
     int *s = malloc(101 * sizeof(int));
 
-    int senderID = sender;
+    unsigned int senderID = sender;
 
-    if(mq_receive(msgid, in, MAX_BUFFER_SIZE, senderID) == -1) //receive message
+    if(mq_receive(msgid, in, MAX_BUFFER_SIZE, &senderID) == -1) //receive message
     {
         perror("msgrcv");
         printf("Welp");
         exit(1);
     }
 
-    for(int i = 0; i < 101; i++)
-    {
-        s[i] = atoi(in[i]);
-    }
+
+    printf("%c", in[0]);
+
+    // for(int i = 0; i < 101; i++)
+    // {
+    //     s[i] = new[i];
+    // }
 
     return s;
 }
