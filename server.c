@@ -1,7 +1,7 @@
 #include "assignment01_Jones_Dax_FunctionsFile.h"
 
 // boobs
-void customer(mqd_t, char, int *, int *);
+void customer(mqd_t, char, int *, int *, struct ItemInfo *);
 void helper(mqd_t, struct ItemInfo *, char *, int, int *);
 int* getMessage(mqd_t, char);
 int getRandomOrder(int *, int *);
@@ -98,7 +98,7 @@ void server(struct ItemInfo *items)
 
     if(pid == 0)
     {
-        customer(qd, letter, ordersLeft, ordersToPick);
+        customer(qd, letter, ordersLeft, ordersToPick, items);
     }
     else if(pid > 0)
     {
@@ -107,7 +107,10 @@ void server(struct ItemInfo *items)
 
     while(wait(NULL) != -1 || errno != ECHILD){;}
 
-    printf("\n\nThank You!");
+    mq_close(qd);
+    mq_unlink(QUEUE_NAME);
+
+    printf("\n\nThank You!\n");
 }
 
 
@@ -115,17 +118,17 @@ void server(struct ItemInfo *items)
 //          Customer Process
 //==========================================
 
-void customer(mqd_t msgid, char processID, int *ordersLeft, int *ordersToPick)
+void customer(mqd_t msgid, char processID, int *ordersLeft, int *ordersToPick, struct ItemInfo *itemList)
 {
     int nums[101];
     int temp;
 
     do{
-    printf("Hello! I'm Process %c!\nPlease enter the number of items you want me to purchas (There are %d items left):\n", processID, *ordersLeft); //Ask to enter num of orders
+    printf("\nHello! I'm Process %c!\nPlease enter the number of items you want me to purchas (There are %d items left):\n", processID, *ordersLeft); //Ask to enter num of orders
     fflush(stdin);
     scanf("%d", &temp); //Place in order
 
-    nums[0] = (char)temp;
+    nums[0] = temp;
 
     }while(nums[0] > *ordersLeft || nums[0] < 0);
 
@@ -137,10 +140,9 @@ void customer(mqd_t msgid, char processID, int *ordersLeft, int *ordersToPick)
     unsigned int senderID = processID;
     char test[101];
 
-    for(int i = 1; i < nums[0] + 1; i++)
+    for(int i = 0; i < nums[0] + 1; i++)
     {
         test[i] = nums[i];
-        printf("%c", test[i]);
     }
 
     if(mq_send(msgid, test, strlen(test) + 1, 0) == -1)
@@ -148,8 +150,6 @@ void customer(mqd_t msgid, char processID, int *ordersLeft, int *ordersToPick)
         perror("msgsnd");
         exit(1);
     }
-
-    printf("%c Sent!\n", processID);
 
     exit(0);
 }
@@ -184,7 +184,7 @@ void helper(mqd_t msgid, struct ItemInfo *itemList, char *order, int numberOfPro
 
     while(!*canContinue){;}
 
-    printf("Hi! I'm the helper! Here's the summary of all the orders:\n========================================\n\n");
+    printf("\n\nHi! I'm the helper! Here's the summary of all the orders:\n=========================================================\n");
     
 
     for(i = 0; i < numberOfProcesses; i++)
@@ -230,7 +230,7 @@ void helper(mqd_t msgid, struct ItemInfo *itemList, char *order, int numberOfPro
 
 int* getMessage(mqd_t msgid, char sender)
 {
-    char in[101];
+    char in[MAX_BUFFER_SIZE];
     int *s = malloc(101 * sizeof(int));
 
     unsigned int senderID = sender;
@@ -242,13 +242,12 @@ int* getMessage(mqd_t msgid, char sender)
         exit(1);
     }
 
+    s[0] = in[0];
 
-    printf("%c", in[0]);
-
-    // for(int i = 0; i < 101; i++)
-    // {
-    //     s[i] = new[i];
-    // }
+    for(int i = 1; i < s[0] + 1; i++)
+    {
+        s[i] = in[i];
+    }
 
     return s;
 }
