@@ -1,20 +1,24 @@
 #include "assignment01_Jones_Dax_FunctionsFile.h"
 
-void clear();
 
 void readInFile(struct ItemInfo *items)
 {
-    FILE *fp = fopen("items.txt", "r");
+    //Desc: Reads in file state.txt and places information into given struct array
+    //Parameters: 
+    // items: struct array to being filled with info from the file
 
 
-    char line[100];
-    int pos = 0, linePos = 0, i = 0, j = 0;
+    FILE *fp = fopen("items.txt", "r"); //open file state.txt
 
 
-    char serial[15];
-    char itemName[100];
-    char price[50];
-    char site[20];
+    char line[100]; //create buffer line for raw line
+    int pos = 0, linePos = 0, i = 0; // pos: to keep array index of array desired to store, linePos: to keep array index through buffer line, i: keeps index of struct array: 
+
+
+    char serial[15]; // array to store current serial number
+    char itemName[100]; // array to store current item name
+    char price[50]; // array to store current price
+    char site[20]; // array to store current site
 
     while(fgets(line, 100, fp) != NULL) 
     {

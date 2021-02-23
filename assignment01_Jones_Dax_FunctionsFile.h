@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdio.h> 
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -13,12 +13,12 @@
 #include <sys/wait.h>
 #include <mqueue.h>
 
-struct ItemInfo{ 
+struct ItemInfo{  //Struct for all item info
         int serial;
         char itemName[100];
         char price[50];
         char site[20];
 };
 
-void readInFile(struct ItemInfo *);
-void server();
+void readInFile(struct ItemInfo *); //readin file header
+void server(); //server header
