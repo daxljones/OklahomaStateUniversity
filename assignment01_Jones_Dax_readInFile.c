@@ -28,7 +28,6 @@ void readInFile()
         }
 
         items[i].serial = atoi(serial);
-        //printf("Serial: %d\n", items[i].serial);
 
         pos = 0;
         linePos++;
@@ -51,7 +50,6 @@ void readInFile()
         }
         
         strcpy(items[i].itemName, itemName);
-        //printf("Name: %s\n", items[i].itemName);
         pos = 0;
         linePos++;
 
@@ -63,7 +61,6 @@ void readInFile()
         }
         
         strcpy(items[i].price, price);
-        //printf("Price: %s\n", items[i].price);
 
         linePos += 3;
         pos = 0;
@@ -76,9 +73,6 @@ void readInFile()
         }
 
         strcpy(items[i].site, site);
-        //printf("Site: %s\n", items[i].site);
-
-        //printf("%d %s %s %s\n", items[i].serial, items[i].itemName, items[i].price, items[i].site);
 
         memset(itemName, 0, 100);
         memset(price, 0, 50);
