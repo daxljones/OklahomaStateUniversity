@@ -20,5 +20,5 @@ struct ItemInfo{
         char site[20];
 };
 
-void readInFile();
-void server(struct ItemInfo *);
+void readInFile(struct ItemInfo *);
+void server();

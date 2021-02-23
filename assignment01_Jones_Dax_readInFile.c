@@ -2,7 +2,7 @@
 
 void clear();
 
-void readInFile()
+void readInFile(struct ItemInfo *items)
 {
     FILE *fp = fopen("items.txt", "r");
 
@@ -10,10 +10,7 @@ void readInFile()
     char line[100];
     int pos = 0, linePos = 0, i = 0, j = 0;
 
-    struct ItemInfo *items = mmap(NULL, 100000, 
-                        PROT_READ | PROT_WRITE, 
-                        MAP_SHARED | MAP_ANONYMOUS, 
-                        0, 0);
+
     char serial[15];
     char itemName[100];
     char price[50];
@@ -82,6 +79,6 @@ void readInFile()
         i++;
     }
 
-    server(items);
+
 }
 

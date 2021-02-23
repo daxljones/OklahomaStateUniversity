@@ -12,8 +12,20 @@ int getRandomOrder(int *, int *);
 #define MAX_MESSAGE_SIZE 256
 #define MAX_BUFFER_SIZE MAX_MESSAGE_SIZE + 10
 
-void server(struct ItemInfo *items)
+
+//=========================================
+//             Server Process
+//=========================================
+
+void server()
 {
+    struct ItemInfo *items = mmap(NULL, 100000, 
+                        PROT_READ | PROT_WRITE, 
+                        MAP_SHARED | MAP_ANONYMOUS, 
+                        0, 0);
+    
+    readInFile(items); //call to read in file to items
+
     int amountOfProcesses;
 
     printf("Please enter a positive integer less than 45 for amount of costumers to make:\n");
@@ -30,6 +42,8 @@ void server(struct ItemInfo *items)
     int i = 0;
     char letter = 65;
 
+
+
     struct mq_attr attr;
 
     attr.mq_flags = 0;
@@ -45,6 +59,16 @@ void server(struct ItemInfo *items)
         exit(1);
     }
 
+    mq_close(qd);
+    mq_unlink(QUEUE_NAME);
+
+    if(((qd = mq_open(QUEUE_NAME, O_RDWR | O_CREAT, PERMISSIONS, &attr)) == -1))
+    {
+        printf("Error making msgid!");
+        perror("mq_open");
+        exit(1);
+    }
+
     int *canContinue = mmap(NULL, sizeof(int), 
                         PROT_READ | PROT_WRITE, 
                         MAP_SHARED | MAP_ANONYMOUS, 
@@ -52,11 +76,37 @@ void server(struct ItemInfo *items)
     
     *canContinue = 0;
 
+    
+    
+    
     char *order = malloc(sizeof(char) * amountOfProcesses + 2); //array for ordering
 
-    printf("Please enter order:\n"); //Ask to enter order
+    char *orderUserReference = malloc((sizeof(char) * amountOfProcesses * 2) + 2); //array for ordering
+
+    orderUserReference[0] = letter;
+
+    for(int j = 1; j < amountOfProcesses * 2 - 1; j++)
+    {
+        if(j % 2 == 0)
+        {
+            orderUserReference[j] = ++letter;
+        }
+        else
+        {
+            orderUserReference[j] = ',';
+        }
+    }
+
+
+    printf("Please enter order for: (%s)\n", orderUserReference); //Ask to enter order
     fflush(stdin);
     scanf("%s", order);
+
+    free(orderUserReference);
+
+
+
+
     
 
     pid_t pid = fork();
@@ -104,9 +154,16 @@ void server(struct ItemInfo *items)
     }
 
     while(wait(NULL) != -1 || errno != ECHILD){;}
+    while(!*canContinue){;}
+
 
     mq_close(qd);
     mq_unlink(QUEUE_NAME);
+
+    munmap(canContinue, sizeof(int));
+    munmap(ordersLeft, sizeof(int));
+    munmap(ordersToPick, sizeof(int) * 100);
+    free(order);
 
     printf("\n\nThank You!\n");
 }
@@ -121,8 +178,18 @@ void customer(mqd_t msgid, int priority, int *ordersLeft, int *ordersToPick, cha
     int nums[101];
     int temp;
 
+    char pid[20];
+    sprintf(pid, "%d", getpid());
+    //printf("Process id: %s", pid);
+
+    if(mq_send(msgid, pid, strlen(pid) + 1, priority) == -1)
+    {
+        perror("msgsnd");
+        exit(1);
+    }
+
     do{
-    printf("\nHello! I'm Process %c!\nPlease enter the number of items you want me to purchas (There are %d items left):\n", letter, *ordersLeft); //Ask to enter num of orders
+    printf("\nHello! I'm Process %c!\nPlease enter the number of items you want me to purchase (There are %d items left):\n", letter, *ordersLeft); //Ask to enter num of orders
     scanf("%d", &temp); //Place in order
 
     nums[0] = temp;
@@ -139,7 +206,6 @@ void customer(mqd_t msgid, int priority, int *ordersLeft, int *ordersToPick, cha
     for(int i = 0; i < nums[0] + 1; i++)
     {
         test[i] = nums[i];
-        printf("Sending: %d\n", (int)test[i]);
     }
 
     if(mq_send(msgid, test, strlen(test) + 1, priority) == -1)
@@ -181,13 +247,13 @@ void helper(mqd_t msgid, struct ItemInfo *itemList, char *order, int numberOfPro
 
     while(!*canContinue){;}
 
+    canContinue = 0;
+
     printf("\n\nHi! I'm the helper! Here's the summary of all the orders:\n=========================================================\n");
     
 
     for(i = 0; i < numberOfProcesses; i++)
     {
-        selections = getMessage(msgid, order[i]);
-
         fileName[14] = order[i];
 
         FILE *ptr;
@@ -199,7 +265,26 @@ void helper(mqd_t msgid, struct ItemInfo *itemList, char *order, int numberOfPro
             printf("Receipt could not be printed!");
         }
 
-        printf("\nProcess %c:\n", order[i]);
+        char in[MAX_BUFFER_SIZE];
+
+        if(mq_receive(msgid, in, MAX_BUFFER_SIZE, 0) == -1) //receive message
+        {
+            perror("msgrcv");
+            printf("Welp");
+            exit(1);
+        }
+
+        char pid[20];
+
+        for (int k = 0; k < 20; k++)
+        {
+            pid[k] = in[k];
+        }
+
+        selections = getMessage(msgid, order[i]);
+        
+
+        printf("\nProcess %c(PID: %s):\n", order[i], pid);
         printf("ItemNum\tSerial\tItem Name\t\t\tPrice\tLocation\n");
         fprintf(ptr,"ItemNum\tSerial\tItem Name\tPrice\tLocation\n");
         printf("==========================================================================================\n");
@@ -222,7 +307,9 @@ void helper(mqd_t msgid, struct ItemInfo *itemList, char *order, int numberOfPro
         fclose(ptr);
     }
 
+    free(selections);
 
+    *canContinue = 1;
     exit(0);
 }
 
@@ -245,7 +332,6 @@ int* getMessage(mqd_t msgid, char sender)
     for(int i = 1; i < s[0] + 1; i++)
     {
         s[i] = (int)in[i];
-        printf("Number got: %d\n", s[i]);
     }
 
     return s;

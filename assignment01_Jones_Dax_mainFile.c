@@ -2,5 +2,5 @@
 
 int main()
 {
-    readInFile();
+    server(); //kick off to start program
 }
