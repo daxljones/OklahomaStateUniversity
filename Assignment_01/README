@@ -1,0 +1,7 @@
+Author: Dax Jones
+
+to compile: gcc -o start assignment01_Jones_Dax_readInFile.c assignment01_Jones_Dax_mainFile.c assignment01_Jones_Dax_serverFile.c -lrt
+
+Instructions are stated on runtime, works best when selecting lower numbers in both customer count and items count
+
+Bugs: when index 0 (or the first item) is selected, there's a bug where it'll override items after it and print the first item multiple times. This has a small chance of happening, but if it does, please rerun the program.
