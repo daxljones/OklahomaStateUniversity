@@ -10,13 +10,13 @@ function p = nonlinear(x, y, m)
     if length(y) ~= length(x), error('x and y must be the same size'); end
     
     x = x(:); %transpose x
-    V = ones(length(x), m+1); % make placeholder matrix
+    A = ones(length(x), m+1); % make placeholder matrix
     
     for i = m:-1:1 %decrement from m through matrix cols
-       V(:, i) = V(:, i+1).*x; %calculate power of each col
+       A(:, i) = A(:, i+1).*x; %calculate power of each col
        
     end
 
-    p = (V \ y'); %calculate coefficients
+    p = (A \ y'); %calculate coefficients
        
 end
